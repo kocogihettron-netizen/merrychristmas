@@ -1,0 +1,46 @@
+body {
+    margin: 0;
+    overflow: hidden; /* Ẩn thanh cuộn */
+    background-color: black;
+    font-family: Arial, sans-serif;
+}
+
+#christmasCanvas {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1; /* Nằm dưới nút Start */
+}
+
+#startButton {
+    position: fixed;
+    top: 50%; /* Căn giữa dọc */
+    left: 50%; /* Căn giữa ngang */
+    /* Dịch chuyển ngược 50% kích thước của chính nó để căn giữa tuyệt đối */
+    transform: translate(-50%, -50%); 
+    z-index: 10;
+    cursor: pointer;
+}
+
+#startButton button {
+    background: linear-gradient(145deg, #ff6b6b, #e04747); /* Màu đỏ-vàng */
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 25px;
+    font-size: 18px;
+    font-weight: bold;
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.5);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+#startButton button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 107, 107, 0.7);
+}
+
+/* Ẩn nút sau khi người dùng click */
+#startButton.hidden {
+    display: none;
+}
