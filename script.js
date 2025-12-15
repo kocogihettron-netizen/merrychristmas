@@ -23,10 +23,10 @@ const DRAG_PUSH_FORCE = 0.5;
 let stage = 0; 
 let isNewStage = false; 
 
-// --- Cấu hình Cây thông ---
-const TREE_HEIGHT_RATIO = 0.45; 
-const TREE_RADIUS_RATIO = 0.15; 
-const TREE_VERTICAL_OFFSET = 0.10; 
+// --- Cấu hình Cây thông (ĐÃ SỬA CHO MÀN HÌNH ĐIỆN THOẠI) ---
+const TREE_HEIGHT_RATIO = 0.35; // Giảm từ 0.45 -> 0.35
+const TREE_RADIUS_RATIO = 0.10; // Giảm từ 0.15 -> 0.10
+const TREE_VERTICAL_OFFSET = 0.15; // Tăng từ 0.10 -> 0.15
 const STAR_SIZE = 50; 
 
 // --- Thiết lập Media ---
@@ -268,7 +268,7 @@ function createBackgroundParticles(count, x, y) {
     }
 }
 
-// --- HÀM TẠO CÂY THÔNG 3D (Giữ nguyên) ---
+// --- HÀM TẠO CÂY THÔNG 3D (ĐÃ CHỈNH KÍCH THƯỚC) ---
 function createChristmasTreeParticles(count) {
     const treeHeight = canvas.height * TREE_HEIGHT_RATIO; 
     const maxRadius = canvas.width * TREE_RADIUS_RATIO; 
@@ -296,20 +296,20 @@ function createChristmasTreeParticles(count) {
     }
 }
 
-// --- Hàm tạo trái tim (ĐÃ SỬA: Hình dáng mềm mại hơn) ---
+// --- Hàm tạo trái tim (ĐÃ CHỈNH KÍCH THƯỚC VÀ HÌNH DÁNG) ---
 function createHeartParticles(count) {
-    const scale = 15; // Giảm scale từ 18 xuống 15 để nhỏ lại
+    const scale = 10; // Giảm từ 15 xuống 10 (Nhỏ hơn)
     
     for (let i = 0; i < count; i++) {
         const t = Math.random() * Math.PI * 2;
         
         const x_formula = scale * (16 * Math.pow(Math.sin(t), 3));
-        // Thay đổi hệ số 13 thành 14 để cải thiện hình dáng (bớt nhọn)
+        // Hệ số 14 giúp trái tim tròn trịa, bớt nhọn
         const y_formula = scale * (14 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)); 
         
         let x = x_formula + (Math.random() - 0.5) * 5; 
-        // Thay đổi dịch chuyển Y từ -30 lên -20 (ít hơn) để căn chỉnh lại vị trí
-        let y = y_formula + (Math.random() - 0.5) * 5 - 20; 
+        // Dịch chuyển Y lên -15 (thay vì -20) để căn giữa tốt hơn
+        let y = y_formula + (Math.random() - 0.5) * 5 - 15; 
         let z = (Math.random() - 0.5) * 50; 
 
         const radius = Math.random() * 1.5 + 0.5;
