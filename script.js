@@ -23,10 +23,9 @@ const DRAG_PUSH_FORCE = 0.5;
 let stage = 0; 
 let isNewStage = false; 
 
-// --- Cấu hình Cây thông (ĐÃ SỬA CHO MÀN HÌNH ĐIỆN THOẠI) ---
-const TREE_HEIGHT_RATIO = 0.35; // Giảm từ 0.45 -> 0.35
-const TREE_RADIUS_RATIO = 0.10; // Giảm từ 0.15 -> 0.10
-const TREE_VERTICAL_OFFSET = 0.15; // Tăng từ 0.10 -> 0.15
+// --- Cấu hình Kích thước chung ---
+// Tỷ lệ offset để căn chỉnh đỉnh ngôi sao và chữ MERRY CHRISTMAS
+const TREE_VERTICAL_OFFSET_RATIO = 0.15; 
 const STAR_SIZE = 50; 
 
 // --- Thiết lập Media ---
@@ -117,8 +116,11 @@ class Particle {
     project() {
         const scale = focalLength / (focalLength + this.z);
         
-        const treeHeight = canvas.height * TREE_HEIGHT_RATIO;
-        const targetTipY = canvas.height * TREE_VERTICAL_OFFSET; 
+        // --- TÍNH TOÁN VỊ TRÍ CHIẾU (DÙNG KÍCH THƯỚC CƠ SỞ ĐÃ KHẮC PHỤC MÉO) ---
+        const baseSize = Math.min(canvas.width, canvas.height);
+        const treeHeight = baseSize * 0.7; // Chiều cao mới (từ hàm tạo cây)
+        const targetTipY = canvas.height * TREE_VERTICAL_OFFSET_RATIO; 
+        
         const scaledTreeHeight = treeHeight * scale;
 
         const baseYProjected = targetTipY + scaledTreeHeight; 
@@ -193,7 +195,7 @@ class Particle {
 }
 
 
-// --- Lớp Floating Image ---
+// --- Lớp Floating Image (Giữ nguyên) ---
 class FloatingImage {
     constructor(imageSrc) {
         this.img = new Image();
@@ -268,10 +270,14 @@ function createBackgroundParticles(count, x, y) {
     }
 }
 
-// --- HÀM TẠO CÂY THÔNG 3D (ĐÃ CHỈNH KÍCH THƯỚC) ---
+// --- HÀM TẠO CÂY THÔNG 3D (ĐÃ KHẮC PHỤC BÓP MÉO) ---
 function createChristmasTreeParticles(count) {
-    const treeHeight = canvas.height * TREE_HEIGHT_RATIO; 
-    const maxRadius = canvas.width * TREE_RADIUS_RATIO; 
+    // SỬ DỤNG KÍCH THƯỚC CƠ SỞ DỰA TRÊN MIN(WIDTH, HEIGHT) ĐỂ TRÁNH BÓP MÉO
+    const baseSize = Math.min(canvas.width, canvas.height);
+    
+    // Tỉ lệ hình nón (Chiều cao gấp đôi bán kính)
+    const treeHeight = baseSize * 0.7; // Chiều cao ~70% của kích thước nhỏ nhất
+    const maxRadius = baseSize * 0.3; // Bán kính ~30% của kích thước nhỏ nhất
 
     for (let i = 0; i < count; i++) {
         const relativeY = Math.random(); 
@@ -409,7 +415,7 @@ function animate() {
 
     // Stage 1: Cây thông Noel
     if (stage === 1) {
-        const treePeakYProjected = canvas.height * TREE_VERTICAL_OFFSET; 
+        const treePeakYProjected = canvas.height * TREE_VERTICAL_OFFSET_RATIO; 
         
         // --- VẼ NGÔI SAO TRÊN ĐỈNH CÂY ---
         ctx.save();
