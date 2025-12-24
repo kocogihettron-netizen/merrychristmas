@@ -6,12 +6,12 @@ const startButtonContainer = document.getElementById('startButton');
 let particles = [];
 let animationFrameId;
 
-// --- Cấu hình 3D ---
+// --- Config 3D cơ bản ---
 const focalLength = 300; 
 let rotationY = 0; 
 const ROTATION_SPEED = 0.005; 
 
-// --- Cấu hình Tương tác Chuột ---
+// --- Biến handle tương tác ---
 let isDragging = false;
 let lastMouse = { x: 0, y: 0 };
 let dragVelocity = { x: 0, y: 0 };
@@ -19,23 +19,21 @@ const DRAG_DAMPING = 0.95;
 const DRAG_FORCE_HORIZONTAL = 0.005; 
 const DRAG_PUSH_FORCE = 0.5; 
 
-// Các Stage: 1: Cây thông 3D, 2: Ảnh trôi nổi, 3: Trái tim
+// Flow điều khiển: 1: Cây thông, 2: Ảnh bay, 3: Heart Stage
 let stage = 0; 
 let isNewStage = false; 
 
-// --- Cấu hình Kích thước chung ---
-// Tỷ lệ offset để căn chỉnh đỉnh ngôi sao và chữ MERRY CHRISTMAS
+// Căn chỉnh layout cho chuẩn trên các màn hình
 const TREE_VERTICAL_OFFSET_RATIO = 0.15; 
 const STAR_SIZE = 50; 
 
-// --- Thiết lập Media ---
+// --- Assets ---
 const treeImage = new Image();
 treeImage.src = 'images/image4.jpg'; 
 
 const floatingImages = [];
 const imageSources = ['images/image1.jpg', 'images/image2.jpg', 'images/image3.jpg']; 
 
-// --- Cấu hình Canvas ---
 function setCanvasSize() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -43,9 +41,9 @@ function setCanvasSize() {
 window.addEventListener('resize', setCanvasSize);
 setCanvasSize();
 
-// --- Xử lý Tương tác Chuột ---
+// --- Mouse Events ---
 function handleMouseDown(event) {
-    if (stage === 1 || stage === 2 || stage === 3) {
+    if (stage >= 1) { // Chỉ cho kéo từ stage 1 trở đi
         isDragging = true;
         lastMouse.x = event.clientX;
         lastMouse.y = event.clientY;
@@ -75,7 +73,6 @@ canvas.addEventListener('mousemove', handleMouseMove);
 canvas.addEventListener('mouseleave', handleMouseUp); 
 
 
-// --- Lớp Particle (Hạt) ---
 class Particle {
     constructor(x, y, z, radius, color, velocity, isTreeParticle = false, isPermanent = false) { 
         this.x = x;
@@ -97,7 +94,7 @@ class Particle {
         this.projectedRadius = 0;
     }
 
-    // Hàm xoay 3D
+    // Xoay quanh trục Y
     rotate() {
         if (this.isTreeParticle && stage === 1) {
             const cosY = Math.cos(rotationY);
@@ -112,31 +109,27 @@ class Particle {
         }
     }
 
-    // HÀM PROJECT: PHÉP CHIẾU 3D -> 2D 
+    // Chiếu từ không gian 3D về 2D canvas
     project() {
         const scale = focalLength / (focalLength + this.z);
         
-        // --- TÍNH TOÁN VỊ TRÍ CHIẾU (DÙNG KÍCH THƯỚC CƠ SỞ ĐÃ KHẮC PHỤC MÉO) ---
         const baseSize = Math.min(canvas.width, canvas.height);
-        const treeHeight = baseSize * 0.7; // Chiều cao mới (từ hàm tạo cây)
+        const treeHeight = baseSize * 0.7; 
         const targetTipY = canvas.height * TREE_VERTICAL_OFFSET_RATIO; 
         
         const scaledTreeHeight = treeHeight * scale;
-
         const baseYProjected = targetTipY + scaledTreeHeight; 
-        this.projectedY = baseYProjected - (this.y * scale); 
         
+        this.projectedY = baseYProjected - (this.y * scale); 
         this.projectedX = this.x * scale + canvas.width / 2;
         this.projectedRadius = this.radius * scale;
         this.alpha = Math.max(0.1, scale * 1.5); 
     }
 
-    // Hàm draw để vẽ hình tròn
     draw() {
         if (this.projectedRadius > 0.1) {
             ctx.save();
             ctx.globalAlpha = this.alpha;
-            
             ctx.beginPath();
             ctx.arc(this.projectedX, this.projectedY, this.projectedRadius, 0, Math.PI * 2, false);
             
@@ -153,7 +146,7 @@ class Particle {
         if (stage === 1 && this.isTreeParticle) {
             this.rotate(); 
             
-            // Giữ lại hiệu ứng rung nhẹ (wobble)
+            // Thêm tí rung lắc cho sinh động
             this.x += this.velocity.x;
             this.y += this.velocity.y;
             this.z += this.velocity.z;
@@ -162,9 +155,7 @@ class Particle {
             if (Math.abs(this.z - this.originalZ) > 1) this.velocity.z *= -1;
             
         } else {
-            // Logic cho các Stage khác
-            
-            // --- ÁP DỤNG LỰC KÉO CỦA CHUỘT (Stage 2/3) ---
+            // Khi bị bung ra hoặc ở stage khác
             if (isDragging) {
                 this.velocity.x += dragVelocity.x * DRAG_PUSH_FORCE;
                 this.velocity.y += dragVelocity.y * DRAG_PUSH_FORCE;
@@ -178,7 +169,7 @@ class Particle {
             this.z += this.velocity.z; 
             
             if (!this.isPermanent) {
-                this.alpha -= 0.005; 
+                this.alpha -= 0.005; // Fade out cho hạt nền
             } else {
                  this.velocity.x *= 0.99;
                  this.velocity.y *= 0.99;
@@ -194,8 +185,7 @@ class Particle {
     }
 }
 
-
-// --- Lớp Floating Image (Giữ nguyên) ---
+// Mấy tấm ảnh kỷ niệm bay bay
 class FloatingImage {
     constructor(imageSrc) {
         this.img = new Image();
@@ -217,6 +207,7 @@ class FloatingImage {
         ctx.translate(this.x + this.size / 2, this.y + this.size / 2);
         ctx.rotate(this.angle);
         
+        // Vẽ viền ảnh
         ctx.fillStyle = this.frameColor;
         ctx.fillRect(-this.size / 2 - 5, -this.size / 2 - 5, this.size + 10, this.size + 10);
 
@@ -228,7 +219,6 @@ class FloatingImage {
     }
 
     update() {
-        // Áp dụng lực kéo lên ảnh nổi (vào vận tốc)
         if (isDragging) {
             this.velocity.x += dragVelocity.x * DRAG_PUSH_FORCE * 5; 
             this.velocity.y += dragVelocity.y * DRAG_PUSH_FORCE * 5;
@@ -241,6 +231,7 @@ class FloatingImage {
         this.velocity.x *= 0.98;
         this.velocity.y *= 0.98;
 
+        // Bounce khi chạm cạnh màn hình
         if (this.x + this.size > canvas.width || this.x < 0) this.velocity.x *= -1;
         if (this.y + this.size > canvas.height || this.y < 0) this.velocity.y *= -1;
 
@@ -254,8 +245,7 @@ function createFloatingImages() {
     });
 }
 
-
-// --- Hàm tạo hạt nền (Giữ nguyên) ---
+// Hiệu ứng hạt bụi li ti cho background đỡ trống
 function createBackgroundParticles(count, x, y) {
     for (let i = 0; i < count; i++) {
         const radius = Math.random() * 2 + 0.5;
@@ -270,14 +260,11 @@ function createBackgroundParticles(count, x, y) {
     }
 }
 
-// --- HÀM TẠO CÂY THÔNG 3D (ĐÃ KHẮC PHỤC BÓP MÉO) ---
+// Generator cây thông bằng math
 function createChristmasTreeParticles(count) {
-    // SỬ DỤNG KÍCH THƯỚC CƠ SỞ DỰA TRÊN MIN(WIDTH, HEIGHT) ĐỂ TRÁNH BÓP MÉO
     const baseSize = Math.min(canvas.width, canvas.height);
-    
-    // Tỉ lệ hình nón (Chiều cao gấp đôi bán kính)
-    const treeHeight = baseSize * 0.7; // Chiều cao ~70% của kích thước nhỏ nhất
-    const maxRadius = baseSize * 0.3; // Bán kính ~30% của kích thước nhỏ nhất
+    const treeHeight = baseSize * 0.7; 
+    const maxRadius = baseSize * 0.3; 
 
     for (let i = 0; i < count; i++) {
         const relativeY = Math.random(); 
@@ -293,56 +280,45 @@ function createChristmasTreeParticles(count) {
         const radius = Math.random() * 1.5 + 0.5;
         const colors = ['#FFD700', '#FFA500', '#FF6347', '#FF0000', '#F0E68C'];
         const color = colors[Math.floor(Math.random() * colors.length)];
-        
         const velocity = { x: (Math.random() - 0.5) * 0.05, y: (Math.random() - 0.5) * 0.05, z: (Math.random() - 0.5) * 0.05 }; 
 
-        const particle = new Particle(x, y, z, radius, color, velocity, true, false); 
-        
-        particles.push(particle);
+        particles.push(new Particle(x, y, z, radius, color, velocity, true, false));
     }
 }
 
-// --- Hàm tạo trái tim (ĐÃ CHỈNH KÍCH THƯỚC VÀ HÌNH DÁNG) ---
+// Công thức vẽ trái tim
 function createHeartParticles(count) {
-    const scale = 10; // Giảm từ 15 xuống 10 (Nhỏ hơn)
-    
+    const scale = 10; 
     for (let i = 0; i < count; i++) {
         const t = Math.random() * Math.PI * 2;
-        
         const x_formula = scale * (16 * Math.pow(Math.sin(t), 3));
-        // Hệ số 14 giúp trái tim tròn trịa, bớt nhọn
         const y_formula = scale * (14 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)); 
         
         let x = x_formula + (Math.random() - 0.5) * 5; 
-        // Dịch chuyển Y lên -15 (thay vì -20) để căn giữa tốt hơn
         let y = y_formula + (Math.random() - 0.5) * 5 - 15; 
         let z = (Math.random() - 0.5) * 50; 
 
         const radius = Math.random() * 1.5 + 0.5;
         const colors = ['#FF69B4', '#FF1493', '#FF00FF', '#FF0000']; 
         const color = colors[Math.floor(Math.random() * colors.length)];
-        
         const velocity = {
             x: (Math.random() - 0.5) * 0.5,
             y: (Math.random() - 0.5) * 0.5,
             z: (Math.random() - 0.5) * 0.5
         };
-
         particles.push(new Particle(x, y, z, radius, color, velocity, false, false)); 
     }
 }
 
-
-// --- Hàm chuyển Stage khi click (Giữ nguyên) ---
+// Chuyển cảnh khi user click
 function transitionStage() {
     if (isDragging) return; 
 
     if (stage === 1) {
-        
+        // Nổ tung cây thông trước khi sang stage 2
         particles.forEach(p => {
             if (p.isTreeParticle) {
                 p.isTreeParticle = false; 
-                
                 const angleH = Math.random() * Math.PI * 2; 
                 const angleV = Math.random() * Math.PI;    
                 const speed = Math.random() * 15 + 10; 
@@ -363,7 +339,6 @@ function transitionStage() {
                     p.friction = 0.95; 
                 }
             });
-            
             stage = 2;
             floatingImages.length = 0; 
             createFloatingImages(); 
@@ -378,8 +353,7 @@ function transitionStage() {
 
 canvas.addEventListener('click', transitionStage);
 
-
-// --- Hàm chính để vẽ (Loop) ---
+// Main loop
 function animate() {
     animationFrameId = requestAnimationFrame(animate);
 
@@ -389,21 +363,19 @@ function animate() {
     createBackgroundParticles(3, canvas.width / 2, canvas.height / 2);
 
     if (stage === 1) {
-        // --- XỬ LÝ XOAY BẰNG CHUỘT (Stage 1) ---
+        // Handle xoay cây bằng chuột hoặc auto
         if (isDragging) {
             rotationY += dragVelocity.x; 
         } else {
              rotationY += ROTATION_SPEED; 
         }
-        
+        // Sắp xếp z-index cho đúng chiều sâu
         particles.sort((a, b) => (a.z + a.velocity.z) - (b.z + b.velocity.z));
     }
     
-    // --- GIẢM DẦN VẬN TỐC KÉO CHUỘT ---
     dragVelocity.x *= DRAG_DAMPING;
     dragVelocity.y *= DRAG_DAMPING;
 
-    // Cập nhật và vẽ tất cả các hạt
     for (let i = particles.length - 1; i >= 0; i--) {
         particles[i].update();
         if (!particles[i].isPermanent && particles[i].alpha <= 0.1) {
@@ -411,54 +383,38 @@ function animate() {
         }
     }
 
-    // --- Vẽ nội dung Stage ---
-
-    // Stage 1: Cây thông Noel
     if (stage === 1) {
         const treePeakYProjected = canvas.height * TREE_VERTICAL_OFFSET_RATIO; 
         
-        // --- VẼ NGÔI SAO TRÊN ĐỈNH CÂY ---
+        // Vẽ ngôi sao
         ctx.save();
         ctx.fillStyle = '#FFFF00'; 
-        ctx.shadowColor = '#FFD700';
-        ctx.shadowBlur = 20; 
         ctx.font = `${STAR_SIZE}px serif`; 
         ctx.textAlign = 'center';
         ctx.fillText('★', canvas.width / 2, treePeakYProjected); 
         ctx.restore();
 
-        // --- VẼ CHỮ MERRY CHRISTMAS ---
+        // Vẽ Text Noel
         ctx.font = 'bold 36px Tahoma, sans-serif';
         ctx.fillStyle = '#FFD700';
         ctx.textAlign = 'center';
-        ctx.shadowColor = '#FF0000';
-        ctx.shadowBlur = 10;
-        
         ctx.fillText('MERRY CHRISTMAS', canvas.width / 2, treePeakYProjected - 40); 
-        ctx.shadowBlur = 0;
     }
 
-    // Stage 2: Ảnh trôi nổi
     if (stage === 2) {
         floatingImages.forEach(image => image.update());
     }
 
-    // Stage 3: Trái tim "I LOVE YOU"
     if (stage === 3) {
         createHeartParticles(10); 
-        
         ctx.font = 'bold 50px Tahoma, sans-serif';
         ctx.fillStyle = '#FF69B4'; 
         ctx.textAlign = 'center';
-        ctx.shadowColor = '#FF00FF'; 
-        ctx.shadowBlur = 15;
-        // Chữ "I LOVE YOU" đặt tại trung tâm màn hình 
         ctx.fillText('I LOVE YOU', canvas.width / 2, canvas.height / 2 + 10);
-        ctx.shadowBlur = 0;
     }
 }
 
-// --- Hàm bắt đầu Game khi click nút ---
+// Bấm nút để bắt đầu nhạc và hiệu ứng
 function startGame() {
     startButtonContainer.classList.add('hidden');
     music.volume = 0.5; 
